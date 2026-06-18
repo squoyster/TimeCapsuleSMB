@@ -8,12 +8,30 @@ LAN_IF=${1:?usage: activate-samba.sh LAN_INTERFACE}
 ANCHOR=timecapsule-samba
 RULES=/mnt/Flash/samba/etc/pf-$ANCHOR.conf
 
+port_1445_listening()
+{
+    listeners=$(netstat -an 2>/dev/null || true)
+    case "$listeners" in
+        *1445*LISTEN*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+anchor_present()
+{
+    rules=$(pfctl -sr 2>/dev/null || true)
+    case "$rules" in
+        *timecapsule-samba*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
 ifconfig "$LAN_IF" >/dev/null 2>&1 || { echo "unknown interface: $LAN_IF" >&2; exit 1; }
-netstat -an | grep -E '[.:]1445[[:space:]].*LISTEN' >/dev/null || {
+port_1445_listening || {
     echo 'refusing redirect because Samba is not listening on port 1445' >&2
     exit 1
 }
-pfctl -sr 2>/dev/null | grep -q "$ANCHOR" || {
+anchor_present || {
     echo "PF does not contain a reviewed '$ANCHOR' anchor." >&2
     echo 'Add rdr-anchor/anchor declarations to the persistent PF configuration first.' >&2
     exit 1

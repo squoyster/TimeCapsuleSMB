@@ -37,7 +37,9 @@ Stop unless the output confirms all of the following:
 
 - NetBSD `evbarm`, `/Volumes/dk2/ShareRoot`, and `/mnt/Flash` are present.
 - The data disk has enough free space for existing files plus backups.
-- `tar`, `gzip`, `pfctl`, `ifconfig`, `netstat`, `id`, and `readlink` exist.
+- `scp`, `pfctl`, `ifconfig`, `netstat`, and the basic file utilities reported
+  by preflight exist. The stock firmware may not include `tar`, `gzip`, `grep`,
+  `id`, `cksum`, or `readlink`; deployment does not depend on them.
 - The LAN interface and existing PF/startup configuration are identified.
 - A persistent, non-root Unix account can be created for `tcbackup`, or an
   existing suitable account can be selected and passed as `--smb-user` when
@@ -102,18 +104,20 @@ and device control scripts. The configuration provides:
 
 ## 4. Transfer and stage the release
 
-Modern `scp` defaults to SFTP, which this firmware does not provide. Force the
-legacy SCP protocol with `-O`:
+Modern `scp` defaults to SFTP, which this firmware does not provide. Extract the
+verified archive on the Mac, then force legacy recursive SCP with `-O`; the
+stock target does not provide `tar` or `gzip`:
 
 ```sh
+rm -rf dist/upload
+mkdir -p dist/upload
+tar xzf dist/timecapsule-samba-4.24.3.tar.gz -C dist/upload
 $TC_SSH 'mkdir -p /Volumes/dk2/.samba/incoming'
-scp -O -oHostKeyAlgorithms=+ssh-dss \
-  dist/timecapsule-samba-4.24.3.tar.gz \
+scp -O -r -oHostKeyAlgorithms=+ssh-dss \
+  dist/upload/timecapsule-samba-4.24.3 \
   root@"$TC_HOST":/Volumes/dk2/.samba/incoming/
 
-$TC_SSH 'cd /Volumes/dk2/.samba/incoming && \
-  tar xzf timecapsule-samba-4.24.3.tar.gz && \
-  sh timecapsule-samba-4.24.3/control/install-release.sh 4.24.3 \
+$TC_SSH 'sh /Volumes/dk2/.samba/incoming/timecapsule-samba-4.24.3/control/install-release.sh 4.24.3 \
     /Volumes/dk2/.samba/incoming/timecapsule-samba-4.24.3'
 ```
 

@@ -45,11 +45,13 @@ for script in activate-samba.sh provision-smb-user.sh rollback-samba.sh start-sa
     chmod 700 "$FLASH_ROOT/bin/$script"
 done
 
-if test -L "$DISK_ROOT/current"; then
-    readlink "$DISK_ROOT/current" > "$DISK_ROOT/previous-release"
+if test -f "$DISK_ROOT/current-version"; then
+    cp "$DISK_ROOT/current-version" "$DISK_ROOT/previous-release"
 fi
+rm -f "$DISK_ROOT/current.new"
 ln -s "$RELEASE" "$DISK_ROOT/current.new"
 mv -f "$DISK_ROOT/current.new" "$DISK_ROOT/current"
+echo "$VERSION" > "$DISK_ROOT/current-version"
 mv -f "$FLASH_ROOT/etc/smb.conf.new" "$FLASH_ROOT/etc/smb.conf"
 
 echo "Installed Samba $VERSION but did not start it or change packet-filter rules."

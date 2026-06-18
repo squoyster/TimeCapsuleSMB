@@ -15,10 +15,13 @@ if test -f "$PIDFILE"; then
 fi
 
 if test -f "$DISK_ROOT/previous-release"; then
-    previous=$(cat "$DISK_ROOT/previous-release")
+    previous_version=$(cat "$DISK_ROOT/previous-release")
+    previous=$DISK_ROOT/releases/$previous_version
     if test -d "$previous"; then
+        rm -f "$DISK_ROOT/current.rollback"
         ln -s "$previous" "$DISK_ROOT/current.rollback"
         mv -f "$DISK_ROOT/current.rollback" "$DISK_ROOT/current"
+        echo "$previous_version" > "$DISK_ROOT/current-version"
         echo "Restored release symlink to $previous"
     fi
 fi

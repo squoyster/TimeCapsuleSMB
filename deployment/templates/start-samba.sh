@@ -11,6 +11,15 @@ SMBD=$CURRENT/samba-min/sbin/smbd
 TESTPARM=$CURRENT/samba-min/bin/testparm
 PIDFILE=$DISK_ROOT/state/run/smbd.pid
 
+port_1445_listening()
+{
+    listeners=$(netstat -an 2>/dev/null || true)
+    case "$listeners" in
+        *1445*LISTEN*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
 waited=0
 while test ! -d /Volumes/dk2/ShareRoot && test "$waited" -lt 120; do
     sleep 5
@@ -31,7 +40,7 @@ fi
 
 "$SMBD" -D -s "$CONFIG"
 sleep 2
-netstat -an | grep -E '[.:]1445[[:space:]].*LISTEN' >/dev/null || {
+port_1445_listening || {
     echo 'smbd did not listen on port 1445' >&2
     exit 1
 }

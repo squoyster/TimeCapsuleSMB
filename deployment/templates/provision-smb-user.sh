@@ -8,7 +8,14 @@ USER_NAME=${1:-tcbackup}
 CURRENT=/Volumes/dk2/.samba/current
 SMBPASSWD=$CURRENT/samba-min/bin/smbpasswd
 
-id "$USER_NAME" >/dev/null 2>&1 || {
+user_exists=false
+while IFS=: read -r name _rest; do
+    if test "$name" = "$USER_NAME"; then
+        user_exists=true
+        break
+    fi
+done < /etc/passwd
+test "$user_exists" = true || {
     echo "Unix account '$USER_NAME' does not exist." >&2
     echo 'Create a persistent, non-root service account supported by this firmware before continuing.' >&2
     exit 1
