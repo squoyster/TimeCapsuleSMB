@@ -19,14 +19,16 @@ def build_parser() -> argparse.ArgumentParser:
     quota.add_argument("--free-gib", type=int, required=True)
 
     render = subparsers.add_parser("render-config", help="render smb.conf")
-    render.add_argument("--time-machine-max-size", required=True)
-    render.add_argument("--smb-user", default="tcbackup")
+    render.add_argument("--share-name", default="alex")
+    render.add_argument("--share-path", default="/Volumes/dk2/ShareRoot/alex")
+    render.add_argument("--smb-user", default="root")
     render.add_argument("--output", type=Path)
 
     package = subparsers.add_parser("package", help="package a validated cross-build")
     package.add_argument("--stage", type=Path, required=True)
-    package.add_argument("--time-machine-max-size", required=True)
-    package.add_argument("--smb-user", default="tcbackup")
+    package.add_argument("--share-name", default="alex")
+    package.add_argument("--share-path", default="/Volumes/dk2/ShareRoot/alex")
+    package.add_argument("--smb-user", default="root")
     package.add_argument(
         "--output",
         type=Path,
@@ -42,7 +44,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"{size}G")
         return 0
 
-    config = SambaConfig(args.time_machine_max_size, args.smb_user)
+    config = SambaConfig(args.share_name, args.share_path, args.smb_user)
     if args.command == "render-config":
         rendered = config.render()
         if args.output:

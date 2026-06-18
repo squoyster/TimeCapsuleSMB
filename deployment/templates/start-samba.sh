@@ -6,7 +6,7 @@ export PATH
 
 DISK_ROOT=/Volumes/dk2/.samba
 CURRENT=$DISK_ROOT/current
-CONFIG=/mnt/Flash/samba/etc/smb.conf
+CONFIG=$DISK_ROOT/control/smb.conf
 SMBD=$CURRENT/samba-min/sbin/smbd
 TESTPARM=$CURRENT/samba-min/bin/testparm
 PIDFILE=$DISK_ROOT/state/run/smbd.pid

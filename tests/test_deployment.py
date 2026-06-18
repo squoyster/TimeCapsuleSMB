@@ -25,19 +25,21 @@ class QuotaTests(unittest.TestCase):
 
 
 class ConfigTests(unittest.TestCase):
-    def test_time_machine_and_files_are_separate(self) -> None:
-        rendered = SambaConfig("1500G").render()
+    def test_minimal_config_reuses_existing_share(self) -> None:
+        rendered = SambaConfig().render()
 
         self.assertIn("server min protocol = SMB2_02", rendered)
         self.assertIn("smb ports = 1445", rendered)
-        self.assertIn("path = /Volumes/dk2/ShareRoot/TimeMachine", rendered)
-        self.assertIn("fruit:time machine max size = 1500G", rendered)
-        self.assertIn("veto files = /TimeMachine/", rendered)
+        self.assertIn("[alex]", rendered)
+        self.assertIn("path = /Volumes/dk2/ShareRoot/alex", rendered)
+        self.assertIn("valid users = root", rendered)
+        self.assertIn("fruit:time machine = no", rendered)
+        self.assertNotIn("fruit:time machine max size", rendered)
         self.assertNotIn("guest ok = yes", rendered)
 
     def test_rejects_unsafe_user_name(self) -> None:
         with self.assertRaisesRegex(ValueError, "SMB user"):
-            SambaConfig("1500G", "bad user").render()
+            SambaConfig(smb_user="bad user").render()
 
 
 class BundleTests(unittest.TestCase):
@@ -82,7 +84,7 @@ class BundleTests(unittest.TestCase):
         output = self.root / "bundle.tar.gz"
         real_templates = Path(deploy.__file__).resolve().parent / "deployment" / "templates"
         bundle, checksum = create_bundle(
-            self.stage, output, SambaConfig("1500G"), real_templates
+            self.stage, output, SambaConfig(), real_templates
         )
 
         self.assertTrue(bundle.is_file())

@@ -20,18 +20,18 @@ def recommended_time_machine_gib(capacity_bytes: int, free_bytes: int) -> int:
 
 @dataclass(frozen=True)
 class SambaConfig:
-    time_machine_max_size: str
-    smb_user: str = "tcbackup"
+    share_name: str = "alex"
+    share_path: str = "/Volumes/dk2/ShareRoot/alex"
+    smb_user: str = "root"
     workgroup: str = "WORKGROUP"
 
     def render(self) -> str:
-        if not self.time_machine_max_size[:-1].isdigit() or self.time_machine_max_size[-1:] not in {
-            "G",
-            "T",
-        }:
-            raise ValueError("Time Machine size must look like 500G or 1T")
         if not self.smb_user.replace("_", "").isalnum():
             raise ValueError("SMB user must contain only letters, digits, and underscores")
+        if not self.share_name.replace("_", "").replace("-", "").isalnum():
+            raise ValueError("share name must contain only letters, digits, underscores, and dashes")
+        if not self.share_path.startswith("/Volumes/dk2/ShareRoot/"):
+            raise ValueError("share path must be an existing directory below /Volumes/dk2/ShareRoot")
         return f"""[global]
     server role = standalone server
     workgroup = {self.workgroup}
@@ -52,24 +52,11 @@ class SambaConfig:
     log file = /Volumes/dk2/.samba/state/log/smbd.%m.log
     max log size = 10240
 
-[TimeMachine]
-    path = /Volumes/dk2/ShareRoot/TimeMachine
+[{self.share_name}]
+    path = {self.share_path}
     valid users = {self.smb_user}
     read only = no
     browseable = yes
-    vfs objects = catia fruit streams_xattr
-    fruit:time machine = yes
-    fruit:time machine max size = {self.time_machine_max_size}
-    fruit:metadata = netatalk
-    fruit:resource = file
-
-[Files]
-    path = /Volumes/dk2/ShareRoot
-    valid users = {self.smb_user}
-    read only = no
-    browseable = yes
-    veto files = /TimeMachine/
-    delete veto files = no
     vfs objects = catia fruit streams_xattr
     fruit:time machine = no
     fruit:metadata = netatalk

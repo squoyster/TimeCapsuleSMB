@@ -4,7 +4,7 @@ set -eu
 PATH=/bin:/sbin:/usr/bin:/usr/sbin
 export PATH
 
-USER_NAME=${1:-tcbackup}
+USER_NAME=${1:-root}
 CURRENT=/Volumes/dk2/.samba/current
 SMBPASSWD=$CURRENT/samba-min/bin/smbpasswd
 
@@ -28,4 +28,4 @@ test -x "$SMBPASSWD" || {
 echo "Creating or updating Samba identity '$USER_NAME'."
 echo 'The password is read interactively and is not placed in argv or logs.'
 LD_LIBRARY_PATH="$CURRENT/lib:$CURRENT/samba-min/lib" \
-    "$SMBPASSWD" -c /mnt/Flash/samba/etc/smb.conf -a "$USER_NAME"
+    "$SMBPASSWD" -c /Volumes/dk2/.samba/control/smb.conf -a "$USER_NAME"

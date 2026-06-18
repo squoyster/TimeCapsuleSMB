@@ -6,7 +6,7 @@ export PATH
 
 LAN_IF=${1:?usage: activate-samba.sh LAN_INTERFACE}
 ANCHOR=timecapsule-samba
-RULES=/mnt/Flash/samba/etc/pf-$ANCHOR.conf
+RULES=/Volumes/dk2/.samba/control/pf-$ANCHOR.conf
 
 port_1445_listening()
 {

@@ -8,12 +8,12 @@ This repo contains host-side scripts for discovery and SSH enablement. Samba dep
 - Uses mDNS to discover Time Capsules on your network.
 - Enables root SSH access using AirPyrt (temporary) to allow configuration.
 - Provides a guarded Samba 4.24.3 cross-build workflow for the Time Capsule's NetBSD-derived `evbarm` environment.
-- Installs the runtime on the mounted hard disk, keeps small configuration and launchers on persistent flash, and redirects port 445 after validation.
+- Stages the runtime and configuration under `/Volumes/dk2/.samba` for a manual port-1445 smoke test without changing the existing share layout.
 
 ## Status
 - mDNS discovery and interactive SSH enable/disable automation are implemented.
-- Versioned packaging, installation, activation, and rollback scripts are implemented.
-- Cross-build compatibility and the firmware-specific persistent boot hook must still be validated on real hardware.
+- Versioned packaging, minimal installation, startup, and rollback scripts are implemented.
+- Cross-build compatibility must still be validated before any PF, boot, or Time Machine integration work.
 
 ## Prerequisites
 - macOS host (Apple Silicon M1/M2 tested) with Python 3.10+ and `venv`.
@@ -30,8 +30,8 @@ This repo contains host-side scripts for discovery and SSH enablement. Samba dep
 1. Discover Time Capsules via mDNS; prefer the `.local` hostname over raw IP (e.g., `Basement-AirPort-Time-Capsule.local`).
 2. Enable SSH to `root` using AirPyrt so we can provision the box.
 3. Copy a validated, versioned Samba build onto the mounted data disk.
-4. Keep Apple File Sharing enabled so the disk auto-mounts, but redirect ports so your Samba answers SMB connections.
-5. Run SMB2/SMB3 on port 1445 and redirect LAN TCP 445 only after health checks pass.
+4. Keep Apple File Sharing enabled so the disk auto-mounts.
+5. Test SMB2/SMB3 directly on port 1445 before considering traffic redirection or persistence.
 
 ## Manual Setup (until automated)
 
