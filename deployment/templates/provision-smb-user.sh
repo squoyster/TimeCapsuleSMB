@@ -1,6 +1,9 @@
 #!/bin/sh
 set -eu
 
+PATH=/bin:/sbin:/usr/bin:/usr/sbin
+export PATH
+
 USER_NAME=${1:-tcbackup}
 CURRENT=/Volumes/dk2/.samba/current
 SMBPASSWD=$CURRENT/samba-min/bin/smbpasswd

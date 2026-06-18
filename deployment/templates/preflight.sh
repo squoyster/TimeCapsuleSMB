@@ -1,6 +1,9 @@
 #!/bin/sh
 set -u
 
+PATH=/bin:/sbin:/usr/bin:/usr/sbin
+export PATH
+
 echo '== system =='
 uname -a
 sysctl hw.machine hw.model hw.physmem 2>&1 || true

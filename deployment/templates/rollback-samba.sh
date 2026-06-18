@@ -1,6 +1,9 @@
 #!/bin/sh
 set -eu
 
+PATH=/bin:/sbin:/usr/bin:/usr/sbin
+export PATH
+
 DISK_ROOT=/Volumes/dk2/.samba
 ANCHOR=timecapsule-samba
 PIDFILE=$DISK_ROOT/state/run/smbd.pid

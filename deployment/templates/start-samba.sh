@@ -1,6 +1,9 @@
 #!/bin/sh
 set -eu
 
+PATH=/bin:/sbin:/usr/bin:/usr/sbin
+export PATH
+
 DISK_ROOT=/Volumes/dk2/.samba
 CURRENT=$DISK_ROOT/current
 CONFIG=/mnt/Flash/samba/etc/smb.conf

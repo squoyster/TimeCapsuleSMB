@@ -1,6 +1,9 @@
 #!/bin/sh
 set -eu
 
+PATH=/bin:/sbin:/usr/bin:/usr/sbin
+export PATH
+
 LAN_IF=${1:?usage: activate-samba.sh LAN_INTERFACE}
 ANCHOR=timecapsule-samba
 RULES=/mnt/Flash/samba/etc/pf-$ANCHOR.conf

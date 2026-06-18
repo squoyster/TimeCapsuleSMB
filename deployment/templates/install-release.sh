@@ -1,6 +1,9 @@
 #!/bin/sh
 set -eu
 
+PATH=/bin:/sbin:/usr/bin:/usr/sbin
+export PATH
+
 VERSION=${1:?usage: install-release.sh VERSION BUNDLE_ROOT}
 BUNDLE_ROOT=${2:?usage: install-release.sh VERSION BUNDLE_ROOT}
 DISK_ROOT=/Volumes/dk2/.samba

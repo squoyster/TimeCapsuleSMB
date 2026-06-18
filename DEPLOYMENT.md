@@ -29,6 +29,10 @@ input. This makes no device changes:
 $TC_SSH 'sh -s' < deployment/templates/preflight.sh | tee preflight.txt
 ```
 
+If `/Volumes/dk2` is absent, connect to the Time Capsule's existing file share
+from Finder first, then rerun preflight. The firmware mounts the data disk on
+demand; deployment must not continue while it is unmounted.
+
 Stop unless the output confirms all of the following:
 
 - NetBSD `evbarm`, `/Volumes/dk2/ShareRoot`, and `/mnt/Flash` are present.
