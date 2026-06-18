@@ -18,9 +18,8 @@ dist/
 *.egg-info/
 *.egg
 
-# Local dependencies and AirPyrt env
+# Local dependencies
 .deps/
-.airpyrt-venv/
 
 # Installer logs
 pip-log.txt

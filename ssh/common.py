@@ -1,116 +1,76 @@
 from __future__ import annotations
 
-import os
 import shlex
-import shutil
-import subprocess
-from typing import Iterable, List, Optional, Tuple
-import re
+from typing import Any, Iterable, List, Optional, Tuple, Type
 
 
-def run(cmd: List[str], check: bool = True, capture: bool = True) -> subprocess.CompletedProcess:
-    return subprocess.run(
-        cmd,
-        check=check,
-        stdout=subprocess.PIPE if capture else None,
-        stderr=subprocess.STDOUT if capture else None,
-        text=True,
-    )
-
-
-def acp_run_check(cmd: List[str]) -> str:
-    """Run an AirPyrt command, detect in-output error codes, and raise.
-
-    Some AirPyrt (acp) invocations print "error code: -0x.." but still exit 0
-    when authentication fails. This parses stdout to catch that case.
-
-    Returns captured stdout on success.
-    """
-    proc = run(cmd, check=False, capture=True)
-    out = proc.stdout or ""
-    if proc.returncode != 0:
-        raise RuntimeError(out.strip() or f"Command failed with rc={proc.returncode}")
-    low = out.lower()
-    m = re.search(r"error[_ ]code\s*:?[\t ]*(-?0x[0-9a-f]+)", low)
-    if m and m.group(1).startswith("-0x"):
-        raise RuntimeError(f"AirPyrt reported error_code {m.group(1)} (likely wrong admin password). Output: {out.strip()}")
-    return out
-
-
-def acp_available(py_exe: str) -> bool:
+def _load_airpyrt() -> tuple[Type[Any], Type[Any]]:
     try:
-        # Capture output to avoid printing to stdout during interpreter probes
-        run([py_exe, "-c", "import acp; print(1)"], capture=True)
-        return True
-    except Exception:
-        return False
-
-
-def candidate_interpreters() -> List[str]:
-    env_py = os.environ.get("AIRPYRT_PY")
-    if env_py:
-        return [env_py]
-    local_env = os.path.join(os.getcwd(), ".airpyrt-venv", "bin", "python")
-    return [local_env, "python2", "python2.7", "python"]
-
-
-def find_airpyrt_python(candidates: Optional[Iterable[str]] = None) -> Optional[str]:
-    for py in (candidates or candidate_interpreters()):
-        try:
-            if acp_available(py):
-                return py
-        except Exception:
-            continue
-    return None
-
-
-def find_acp_executable() -> Optional[str]:
-    return shutil.which("acp")
-
-
-def ensure_airpyrt_available(python_candidates: Optional[Iterable[str]] = None) -> tuple[Optional[str], Optional[str]]:
-    acp_exec = find_acp_executable()
-    py = find_airpyrt_python(python_candidates)
-    if not acp_exec and not py:
+        from acp.client import ACPClient
+        from acp.property import ACPProperty
+    except ImportError as exc:
         raise RuntimeError(
-            "AirPyrt (acp) not found. Install per https://github.com/samuelthomas2774/airport/wiki/AirPyrt#installation\n"
-            "Example: git clone https://github.com/x56/airpyrt-tools.git && cd airpyrt-tools && python2 setup.py install --user\n"
-            "Then ensure 'acp' is on PATH or set AIRPYRT_PY to that interpreter."
-        )
-    return acp_exec, py
+            "Python 3 AirPyrt is not installed. Run 'make install' from the project root."
+        ) from exc
+    return ACPClient, ACPProperty
 
 
-def set_dbug(host: str, password: str, value_hex: str, *, python_candidates: Optional[Iterable[str]] = None, verbose: bool = True) -> None:
-    acp_exec, py = ensure_airpyrt_available(python_candidates)
-    if acp_exec:
-        cmd = [acp_exec, "-t", host, "-p", password, "--setprop", "dbug", value_hex]
-    else:
-        cmd = [py, "-B", "-m", "acp", "-t", host, "-p", password, "--setprop", "dbug", value_hex]
-    if verbose:
-        print("Running:", " ".join(shlex.quote(x) for x in cmd))
+def _set_airpyrt_property(host: str, password: str, name: str, value: int) -> None:
+    client_type, property_type = _load_airpyrt()
+    client = client_type(host, password)
     try:
-        acp_run_check(cmd)
-    except RuntimeError as e:
-        raise RuntimeError(f"Failed to set dbug={value_hex} via AirPyrt. Output: {e}")
+        client.connect()
+        client.set_properties({name: property_type(name, value)})
+    finally:
+        client.close()
 
 
-def reboot(host: str, password: str, *, python_candidates: Optional[Iterable[str]] = None, verbose: bool = True) -> None:
-    acp_exec, py = ensure_airpyrt_available(python_candidates)
-    if acp_exec:
-        cmd = [acp_exec, "-t", host, "-p", password, "--reboot"]
-    else:
-        cmd = [py, "-B", "-m", "acp", "-t", host, "-p", password, "--reboot"]
+def set_dbug(
+    host: str,
+    password: str,
+    value_hex: str,
+    *,
+    python_candidates: Optional[Iterable[str]] = None,
+    verbose: bool = True,
+) -> None:
+    """Set the AirPyrt debug property without exposing the password in argv."""
+    del python_candidates  # Retained for compatibility with existing callers.
     if verbose:
-        print("Rebooting device:", " ".join(shlex.quote(x) for x in cmd))
+        print(f"Setting AirPyrt dbug={value_hex} on {host}")
     try:
-        acp_run_check(cmd)
-    except RuntimeError as e:
-        raise RuntimeError(f"Reboot command failed. Output: {e}")
+        value = int(value_hex, 0)
+        _set_airpyrt_property(host, password, "dbug", value)
+    except Exception as exc:
+        raise RuntimeError(f"Failed to set dbug={value_hex} via AirPyrt") from exc
+
+
+def reboot(
+    host: str,
+    password: str,
+    *,
+    python_candidates: Optional[Iterable[str]] = None,
+    verbose: bool = True,
+) -> None:
+    """Reboot via the acRB property in the Python 3 AirPyrt API."""
+    del python_candidates  # Retained for compatibility with existing callers.
+    if verbose:
+        print(f"Rebooting device via AirPyrt: {host}")
+    try:
+        _set_airpyrt_property(host, password, "acRB", 0)
+    except Exception as exc:
+        raise RuntimeError("Reboot command failed") from exc
 
 
 # --- SSH helper (run commands on the device) ---
 
-def ssh_run_command(host: str, password: str, command: str, *, timeout: int = 30, verbose: bool = True) -> Tuple[int, str]:
+def ssh_run_command(
+    host: str,
+    password: str,
+    command: str,
+    *,
+    timeout: int = 30,
+    verbose: bool = True,
+) -> Tuple[int, str]:
     """Run a shell command on the device via system ssh using pexpect.
 
     Uses password auth for user 'root', allows legacy DSA host keys, and disables
@@ -149,6 +109,3 @@ def ssh_run_command(host: str, password: str, command: str, *, timeout: int = 30
             pass
     rc = child.exitstatus if child.exitstatus is not None else (child.signalstatus or 1)
     return rc, "".join(out_chunks)
-
-
-    

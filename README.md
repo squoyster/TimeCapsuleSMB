@@ -2,7 +2,7 @@
 
 Run a modern Samba server on an Apple Time Capsule while keeping the disk auto-mount behavior of Apple’s firmware.
 
-This repo documents the approach and will grow into a set of scripts to automate discovery, SSH enablement, deployment, and configuration. For now, follow the manual procedure below.
+This repo contains host-side scripts for discovery and SSH enablement. Samba deployment and device configuration remain manual.
 
 ## What This Does
 - Uses mDNS to discover Time Capsules on your network.
@@ -11,13 +11,13 @@ This repo documents the approach and will grow into a set of scripts to automate
 - Installs Samba onto the device’s persistent flash, configures shares from the mounted disk, and redirects ports so clients can connect normally.
 
 ## Status
-- Planning and manual steps are documented.
-- No automation code is checked in yet; the goal is to provide a Python CLI that performs discovery, SSH enablement, upload, and configuration.
+- mDNS discovery and interactive SSH enable/disable automation are implemented.
+- Samba upload, configuration, port redirection, and boot persistence remain manual.
 
 ## Prerequisites
-- macOS host (Apple Silicon M1/M2 tested) with Python 3.10+ and `virtualenv`.
+- macOS host (Apple Silicon M1/M2 tested) with Python 3.10+ and `venv`.
 - Access to your Time Capsule from the same network.
-- AirPyrt tool to enable SSH on the Time Capsule (consult AirPyrt’s README for install/usage).
+- The Python 3 AirPyrt port checked out in the sibling directory `../airpyrt-tools`.
 - Ability to build/cross-compile for NetBSD `evbarm` (toolchain of your choice).
 
 ## Device Notes
@@ -37,14 +37,14 @@ This repo documents the approach and will grow into a set of scripts to automate
 1) Discover the Time Capsule
 - On macOS, you can enumerate services via `dns-sd` or simply identify the device in AirPort Utility. Prefer the mDNS hostname: `X-AirPort-Time-Capsule.local`.
 
-2) Enable SSH using AirPyrt
-- Create and activate a virtualenv on your Mac:
+2) Install the host tools and enable SSH
+- Create the project environment and install the sibling Python 3 AirPyrt port:
   ```bash
-  python3 -m venv .venv
-  source .venv/bin/activate
-  # install and use AirPyrt per its documentation
+  make install
+  make setup
   ```
-- Use AirPyrt to enable root SSH on the Time Capsule. Refer to the tool’s README for the specific command.
+- `make setup` discovers devices, prompts for a target and admin password, and
+  offers to enable or disable SSH. It can reboot the selected Time Capsule.
 
 3) SSH into the Time Capsule
 - Use the legacy host key option if needed:
@@ -103,6 +103,8 @@ This repo documents the approach and will grow into a set of scripts to automate
   - Or via terminal with `smbutil`/`mount_smbfs`.
 
 ## Security Notes
+- AirPyrt's legacy ACP protocol does not provide modern credential protection.
+  Use it only on a trusted local network and never for remote administration.
 - Be cautious enabling `vfs_fruit` and Time Machine support; follow Samba advisories and keep your build updated.
 - Restrict access to trusted subnets/users; avoid exposing SMB to the internet.
 - Consider rotating credentials and disabling SSH when not actively administering.
@@ -116,7 +118,7 @@ This repo documents the approach and will grow into a set of scripts to automate
 ## Roadmap
 - Python CLI to:
   - Discover Time Capsules via mDNS and prompt for selection.
-  - Enable SSH via AirPyrt automatically inside a virtualenv.
+  - Continue hardening SSH enable/disable automation around the Python 3 AirPyrt port.
   - Upload Samba artifacts and configs.
   - Configure `pf` redirection and launch services; add boot persistence.
 
