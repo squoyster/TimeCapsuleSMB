@@ -1,3 +1,7 @@
+# HISTORICAL NOTES ONLY: this records the discontinued Samba 4.8.12 experiment.
+# Do not use it for a new deployment. Use building/build-samba.sh, which enforces
+# the maintained Samba version selected by this project.
+
 # I ssh'd into an Apple Time Capsule (NetBSD 6.0 evbarm) using ssh -oHostKeyAlgorithms=+ssh-dss.
 
 # Environment is super minimal (tiny mdroot, tiny flash, 16 MB tmpfs). No sftp-server, no compiler, limited tools. 256MB ram. The 2 TB disk is mounted at /Volumes/dk2.

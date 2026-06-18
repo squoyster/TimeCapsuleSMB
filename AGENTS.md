@@ -12,6 +12,8 @@ Capsule's NetBSD-derived `evbarm` firmware, not macOS.
 - `setup.py`: interactive discovery and SSH enable/disable coordinator.
 - `discovery/`: Python 3 mDNS/Bonjour discovery using `zeroconf`.
 - `ssh/`: AirPyrt, reboot, and legacy-SSH helpers.
+- `deploy.py` and `deployment/`: offline configuration/bundle generation and
+  conservative device-side install, activation, and rollback scripts.
 - `building/build.sh`: a record of manual cross-compilation steps for NetBSD 6
   `evbarm`. It contains prose and interactive instructions; do not treat it as
   an unattended, directly executable build script.
@@ -74,8 +76,9 @@ Capsule's NetBSD-derived `evbarm` firmware, not macOS.
   shared disk is `/Volumes/dk2/ShareRoot`; persistent flash is `/mnt/Flash`.
   Do not change, erase, format, or assume either location exists without an
   explicit check.
-- Bind replacement Samba to high ports (`1445` and `1139`) and redirect ports
-  `445` and `139` only as part of an explicitly approved device configuration.
+- Bind replacement Samba to high port `1445` and redirect port `445` only as
+  part of an explicitly approved device configuration. Modern
+  SMB2/SMB3 clients do not need NetBIOS port `139`.
   Never expose SMB or root SSH to the public internet.
 
 ## Validation
@@ -84,7 +87,7 @@ The unit tests use the standard library's `unittest` framework and must remain
 hardware-independent. Run:
 
 ```sh
-python3 -m compileall -q setup.py discovery ssh
+python3 -m compileall -q setup.py deploy.py deployment discovery ssh
 PYTHONPATH=../airpyrt-tools python3 -m unittest discover -s tests -v
 ```
 

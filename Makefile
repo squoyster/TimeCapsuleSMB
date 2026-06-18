@@ -9,7 +9,7 @@
 #   2) make discover  # run mDNS discovery to list devices
 #   3) make setup     # interactively enable or disable SSH on a selected device
 
-.PHONY: venv install airpyrt discover setup test clean
+.PHONY: venv install airpyrt discover setup test samba-config samba-package clean
 
 VENVDIR := .venv
 PYTHON := python3
@@ -43,6 +43,15 @@ setup: install
 
 test: install
 	$(PY) -m unittest discover -s tests -v
+
+samba-config:
+	@test -n "$(TM_MAX_SIZE)" || { echo "Set TM_MAX_SIZE, for example TM_MAX_SIZE=1500G"; exit 2; }
+	$(PYTHON) deploy.py render-config --time-machine-max-size "$(TM_MAX_SIZE)"
+
+samba-package:
+	@test -n "$(STAGE)" || { echo "Set STAGE to the cross-build staging directory"; exit 2; }
+	@test -n "$(TM_MAX_SIZE)" || { echo "Set TM_MAX_SIZE, for example TM_MAX_SIZE=1500G"; exit 2; }
+	$(PYTHON) deploy.py package --stage "$(STAGE)" --time-machine-max-size "$(TM_MAX_SIZE)"
 
 clean:
 	rm -rf $(VENVDIR)
