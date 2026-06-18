@@ -14,6 +14,7 @@ from .config import SambaConfig
 CONTROL_FILES = (
     "activate-samba.sh",
     "install-release.sh",
+    "inspect-deployment-hooks.sh",
     "preflight.sh",
     "provision-smb-user.sh",
     "rollback-samba.sh",

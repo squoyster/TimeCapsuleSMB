@@ -33,6 +33,13 @@ If `/Volumes/dk2` is absent, connect to the Time Capsule's existing file share
 from Finder first, then rerun preflight. The firmware mounts the data disk on
 demand; deployment must not continue while it is unmounted.
 
+After the general preflight passes, inspect the firmware's account and service
+persistence mechanisms before selecting either one:
+
+```sh
+$TC_SSH 'sh -s' < deployment/templates/inspect-deployment-hooks.sh
+```
+
 Stop unless the output confirms all of the following:
 
 - NetBSD `evbarm`, `/Volumes/dk2/ShareRoot`, and `/mnt/Flash` are present.
