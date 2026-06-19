@@ -7,7 +7,7 @@ SAMBA_VERSION=4.24.3
 : "${TOOLDIR:?Set TOOLDIR to the NetBSD cross-tool directory}"
 : "${SYSROOT:?Set SYSROOT to the NetBSD 6 evbarm DESTDIR/sysroot}"
 : "${TRIPLE:?Set TRIPLE to the target compiler prefix, for example arm--netbsdelf-eabi}"
-: "${PREFIX:?Set PREFIX to an empty staging directory}"
+: "${PREFIX:?Set PREFIX to the staging directory shared with build-prereqs.sh}"
 : "${CROSS_ANSWERS:?Set CROSS_ANSWERS to the reviewed Waf cross-answers file}"
 
 case "$(basename "$SAMBA_SOURCE")" in
@@ -27,25 +27,25 @@ do
     test -e "$path" || { echo "Missing required build input: $path" >&2; exit 2; }
 done
 
-if test -d "$PREFIX" && test -n "$(ls -A "$PREFIX")"; then
-    echo "PREFIX must be empty: $PREFIX" >&2
+mkdir -p "$PREFIX"
+if test -e "$PREFIX/samba-min"; then
+    echo "Refusing to overwrite existing staged Samba tree: $PREFIX/samba-min" >&2
     exit 2
 fi
-mkdir -p "$PREFIX"
 
-export PATH="$TOOLDIR/bin:$PATH"
+export PATH="$TOOLDIR/bin:/usr/pkg/bin:$PATH"
 export CC="$TOOLDIR/bin/$TRIPLE-gcc --sysroot=$SYSROOT"
 export CXX="$TOOLDIR/bin/$TRIPLE-g++ --sysroot=$SYSROOT"
 export AR="$TOOLDIR/bin/$TRIPLE-ar"
 export RANLIB="$TOOLDIR/bin/$TRIPLE-ranlib"
 export STRIP="$TOOLDIR/bin/$TRIPLE-strip"
 export CFLAGS="${CFLAGS:--Os -fno-ident}"
-export CPPFLAGS="${CPPFLAGS:--I$SYSROOT/usr/include -D_NETBSD_SOURCE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_LARGE_FILES}"
-export LDFLAGS="${LDFLAGS:---sysroot=$SYSROOT -L$SYSROOT/lib -L$SYSROOT/usr/lib}"
+export CPPFLAGS="${CPPFLAGS:--I$PREFIX/include -I$SYSROOT/usr/include -D_NETBSD_SOURCE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_LARGE_FILES}"
+export LDFLAGS="${LDFLAGS:---sysroot=$SYSROOT -L$PREFIX/lib -L$SYSROOT/lib -L$SYSROOT/usr/lib}"
 export PKG_CONFIG_DIR=
-export PKG_CONFIG_PATH="${PKG_CONFIG_PATH:-}"
+export PKG_CONFIG_PATH="${PKG_CONFIG_PATH:-$PREFIX/lib/pkgconfig}"
 export PKG_CONFIG_LIBDIR="${PKG_CONFIG_LIBDIR:-$PREFIX/lib/pkgconfig}"
-export PKG_CONFIG_SYSROOT_DIR="$SYSROOT"
+export PKG_CONFIG_SYSROOT_DIR="${PKG_CONFIG_SYSROOT_DIR:-}"
 
 cd "$SAMBA_SOURCE"
 rm -rf bin .waf-* .lock-waf* config.log
@@ -62,6 +62,8 @@ rm -rf bin .waf-* .lock-waf* config.log
     --disable-cups \
     --without-pam \
     --without-systemd \
+    --without-libunwind \
+    --without-json \
     --without-quotas \
     --without-acl-support \
     --with-static-modules=catia,fruit,streams_xattr \
@@ -84,7 +86,7 @@ done
     echo "samba_version=$SAMBA_VERSION"
     echo "target=$TRIPLE"
     echo "sysroot=$SYSROOT"
-    echo "configure_flags=file-server-only,static-catia-fruit-streams_xattr"
+    echo "configure_flags=file-server-only,without-libunwind,without-json,static-catia-fruit-streams_xattr"
 } > "$PREFIX/BUILD-METADATA"
 
 echo "Staged Samba $SAMBA_VERSION in $PREFIX"

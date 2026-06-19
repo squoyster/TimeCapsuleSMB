@@ -36,8 +36,8 @@ password.
 
 In the NetBSD cross-build VM, download Samba 4.24.3 and its detached signature
 from Samba's official stable directory. Verify the signature before extracting
-it. Prepare the NetBSD 6 `evbarm` cross-toolchain, dependencies, and reviewed
-Waf cross-answers, then use an empty staging directory:
+it. Prepare the NetBSD 6 `evbarm` cross-toolchain, the native build packages,
+the staged target dependencies, and the reviewed Waf cross-answers:
 
 ```sh
 export SAMBA_SOURCE=/root/tc-build/samba-4.24.3
@@ -48,6 +48,8 @@ export CROSS_ANSWERS=/root/tc-build/netbsd-arm-4.24.3.txt
 export PREFIX=/root/tc-stage-4.24.3
 export JOBS=2
 
+pkgin -y install pkgconf bison p5-Parse-Yapp
+/path/to/TimeCapsuleSMB/building/build-prereqs.sh
 /path/to/TimeCapsuleSMB/building/build-samba.sh
 ```
 
