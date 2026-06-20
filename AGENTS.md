@@ -7,6 +7,10 @@ Samba server on an Apple Time Capsule. The host-side tools discover devices over
 mDNS and use AirPyrt to enable or disable root SSH. The target is the Time
 Capsule's NetBSD-derived `evbarm` firmware, not macOS.
 
+Licensed under GPLv3+ (see `LICENSE`), matching upstream `jamesyc/TimeCapsuleSMB`
+and the Samba project. The Samba source patches under `building/` are GPLv3+
+Samba derivatives and must not be relicensed permissively.
+
 ## Repository map
 
 - `setup.py`: interactive discovery and SSH enable/disable coordinator.

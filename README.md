@@ -127,4 +127,6 @@ multi-Mac testing, persistence, and rollback.
 
 ---
 
+Licensed under the [GNU GPLv3](LICENSE) or (at your option) any later version, matching upstream `jamesyc/TimeCapsuleSMB` and the Samba project. The Samba source patches under `building/` are GPLv3+ Samba derivatives and inherit that license.
+
 This project is unaffiliated with Apple or the Samba team. For educational use only; proceed at your own risk.
