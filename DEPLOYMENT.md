@@ -43,12 +43,12 @@ the staged target dependencies, and the reviewed Waf cross-answers:
 export SAMBA_SOURCE=/root/tc-build/samba-4.24.3
 export TOOLDIR=/root/netbsd6/usr/src/obj/tooldir.NetBSD-*
 export SYSROOT=/root/netbsd6/usr/src/obj/destdir.evbarm
-export TRIPLE=arm--netbsdelf-eabi
-export CROSS_ANSWERS=/root/tc-build/netbsd-arm-4.24.3.txt
+export TRIPLE=arm--netbsdelf
+export CROSS_ANSWERS=/path/to/TimeCapsuleSMB/building/netbsd-arm-4.24.3.txt
 export PREFIX=/root/tc-stage-4.24.3
 export JOBS=2
 
-pkgin -y install pkgconf bison p5-Parse-Yapp
+pkgin -y install gmake pkgconf bison p5-Parse-Yapp gettext-tools
 /path/to/TimeCapsuleSMB/building/build-prereqs.sh
 /path/to/TimeCapsuleSMB/building/build-samba.sh
 ```

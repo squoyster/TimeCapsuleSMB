@@ -29,6 +29,8 @@ Checking for working strptime: "yes"
 Checking for C99 vsnprintf: "yes"
 Checking for HAVE_SHARED_MMAP: "yes"
 Checking for HAVE_INCOHERENT_MMAP: "no"
+Checking for gnutls fips mode support: NO
+Checking for a 64-bit host to support lmdb: NO
 Checking for HAVE_IFACE_GETIFADDRS: "yes"
 Checking for HAVE_IFACE_AIX: "no"
 Checking for HAVE_IFACE_IFCONF: "yes"
@@ -45,4 +47,5 @@ Checking if can we convert from UTF8 to UCS-2LE: "yes"
 Checking for the maximum value of the 'time_t' type: "2147483647"
 Checking whether the realpath function allows a NULL argument: "no"
 Checking for ftruncate extend: "yes"
+Checking for readlink breakage: NO
 getcwd takes a NULL argument: "yes"

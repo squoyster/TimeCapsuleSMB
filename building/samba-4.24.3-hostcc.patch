@@ -1,0 +1,207 @@
+--- a/buildtools/wafsamba/wafsamba.py
++++ b/buildtools/wafsamba/wafsamba.py
+@@ -423,5 +423,23 @@
+ Build.BuildContext.SAMBA_LIBRARY = SAMBA_LIBRARY
+ 
++
++def SAMBA_HOSTCC_ENV(bld, use_hostcc):
++    if not use_hostcc:
++        return bld.env.derive()
++    if not bld.env.HOSTCC:
++        raise Errors.WafError("use_hostcc=True requires --hostcc")
++
++    env = bld.env.derive()
++    env.CC = TO_LIST(bld.env.HOSTCC)
++    env.LINK_CC = TO_LIST(bld.env.HOSTCC)
++    env.CFLAGS = ['-MMD']
++    env.CPPFLAGS = ['-D_NETBSD_SOURCE']
++    env.LDFLAGS = []
++    env.LINKFLAGS = ['-Wl,-R/usr/pkg/lib']
++    env.LIB = ['intl']
++    env.LIBPATH = ['/usr/pkg/lib']
++    return env
++
+ 
+ #################################################################
+ def SAMBA_BINARY(bld, binname, source,
+@@ -475,6 +493,9 @@ def SAMBA_BINARY(bld, binname, source,
+         if not bld.CONFIG_GET('ENABLE_SELFTEST'):
+             enabled=False
+ 
++    if not install and not use_hostcc and not bld.CONFIG_GET('ENABLE_SELFTEST'):
++        enabled=False
++
+     if not enabled:
+         SET_TARGET_TYPE(bld, binname, 'DISABLED')
+         return
+@@ -533,4 +554,5 @@
+     t = bld(
+         features       = features,
++        env            = SAMBA_HOSTCC_ENV(bld, use_hostcc),
+         source         = [],
+         target         = binname,
+@@ -843,4 +864,5 @@
+     t = bld(
+         features       = features,
++        env            = SAMBA_HOSTCC_ENV(bld, use_hostcc),
+         source         = source,
+         target         = modname,
+--- a/third_party/heimdal_build/wscript_build
++++ b/third_party/heimdal_build/wscript_build
+@@ -224,7 +224,10 @@ def HEIMDAL_CFLAGS(use_hostcc=False, extra_cflags=[]):
+         # old compilers on centos7 or ubuntu1604 need this
+ 
+     allow_warnings = bld.env.allow_heimdal_warnings
+-    cflags_picky = bld.env.HEIMDAL_NO_ERROR_CFLAGS
++    if use_hostcc:
++        cflags_picky = []
++    else:
++        cflags_picky = bld.env.HEIMDAL_NO_ERROR_CFLAGS
+     extra_cflags=TO_LIST(extra_cflags)
+ 
+     cflags = ''
+--- a/libcli/security/wscript_build
++++ b/libcli/security/wscript_build
+@@ -5,4 +5,4 @@
+ if bld.CONFIG_SET('HAVE_WNO_UNUSED_BUT_SET_VARIABLE'):
+     # Suppress error: variable 'yynerrs' set but not used [-Werror,-Wunused-but-set-variable]
+     #                 for the generated code.
+-    parser_cflags += ' -Wno-error=unused-but-set-variable'
++    parser_cflags += ' -Wno-unused-but-set-variable'
+--- a/libcli/wsp/wscript_build
++++ b/libcli/wsp/wscript_build
+@@ -23,4 +23,4 @@
+ if bld.CONFIG_SET('HAVE_WNO_UNUSED_BUT_SET_VARIABLE'):
+     # Suppress error: variable 'yynerrs' set but not used [-Werror,-Wunused-but-set-variable]
+     #                 for the generated code.
+-    parser_cflags += ' -Wno-error=unused-but-set-variable'
++    parser_cflags += ' -Wno-unused-but-set-variable'
+--- a/source3/param/loadparm.h
++++ b/source3/param/loadparm.h
+@@ -26,8 +26,10 @@
+ #include <regex.h>
+ 
+ /* Forward declarations */
++#ifndef _INCLUDES_H
+ typedef struct stat_ex SMB_STRUCT_STAT;
+ typedef struct files_struct files_struct;
++#endif
+ struct smbd_server_connection;
+ struct security_descriptor;
+ struct loadparm_context;
+--- a/third_party/waf/waflib/Task.py
++++ b/third_party/waf/waflib/Task.py
+@@ -306,8 +306,16 @@
+ 			if Utils.is_win32:
+ 				# win32 compares the resulting length http://support.microsoft.com/kb/830473
+ 				too_long = sum([len(arg) for arg in cmd]) + len(cmd) > 8192
+ 			else:
+-				# non-win32 counts the amount of arguments (200k)
+-				too_long = len(cmd) > 200000
++				try:
++					arg_max = os.sysconf('SC_ARG_MAX')
++				except (AttributeError, OSError, ValueError):
++					arg_max = 131072
++				env = kw.get('env') or self.env.env or os.environ
++				env_size = sum(len(os.fsencode(str(k))) +
++				               len(os.fsencode(str(v))) + 2
++				               for k, v in env.items())
++				cmd_size = sum(len(os.fsencode(str(arg))) + 1 for arg in cmd)
++				too_long = cmd_size > max(32768, arg_max - env_size - 8192)
+ 
+ 			if too_long and getattr(self, 'allow_argsfile', True):
+--- a/third_party/heimdal/lib/base/common_plugin.h
++++ b/third_party/heimdal/lib/base/common_plugin.h
+@@ -60,10 +60,12 @@
+ #endif
+ 
+ /* For krb5 plugins, this is a krb5_context */
++#ifndef HEIM_BASE_H
+ typedef struct heim_pcontext_s *heim_pcontext;
+ 
+ typedef uintptr_t
+ (HEIM_LIB_CALL *heim_get_instance_func_t)(const char *);
++#endif
+ typedef heim_get_instance_func_t krb5_get_instance_t;
+ 
+ /*
+--- a/third_party/heimdal/lib/base/log.c
++++ b/third_party/heimdal/lib/base/log.c
+@@ -58,7 +58,6 @@
+     struct heim_log_facility_internal *val;
+ };
+ 
+-typedef struct heim_pcontext_s *heim_pcontext;
+ typedef struct heim_pconfig *heim_pconfig;
+ struct heim_svc_req_desc_common_s {
+     HEIM_SVC_REQUEST_DESC_COMMON_ELEMENTS;
+--- a/third_party/heimdal/lib/krb5/krb5.h
++++ b/third_party/heimdal/lib/krb5/krb5.h
+@@ -48,7 +48,9 @@
+ #include <k5e1_err.h>
+ 
+ #include <krb5_asn1.h>
++#ifndef __KRB5_LOCL_H__
+ typedef Krb5Int32 krb5int32;
+ typedef Krb5UInt32 krb5uint32;
++#endif
+ 
+ /* name confusion with MIT */
+--- a/third_party/heimdal/lib/krb5/krb5_locl.h
++++ b/third_party/heimdal/lib/krb5/krb5_locl.h
+@@ -124,9 +124,11 @@
+ #include "crypto-headers.h"
+ #endif
+ 
++#ifndef __KRB5_H__
+ #include <krb5_asn1.h>
+ typedef Krb5Int32 krb5int32;
+ typedef Krb5UInt32 krb5uint32;
++#endif
+ #include <pkinit_asn1.h>
+ 
+ struct send_to_kdc;
+--- a/third_party/popt/poptconfig.c
++++ b/third_party/popt/poptconfig.c
+@@ -43,7 +43,7 @@
+ /*@=declundef =exportheader =incondefs =protoparammatch =redecl =type @*/
+ #endif	/* __LCLINT__ */
+ 
+-#if !defined(__GLIBC__)
++#if !defined(__GLIBC__) && !defined(__NetBSD__)
+ /* Return nonzero if PATTERN contains any metacharacters.
+    Metacharacters can be quoted with backslashes if QUOTE is nonzero.  */
+ static int
+--- a/lib/util/util_crypt.c
++++ b/lib/util/util_crypt.c
+@@ -6,6 +6,10 @@
+ #endif
+ #include "util_crypt.h"
+ 
++#ifndef ENOTRECOVERABLE
++#define ENOTRECOVERABLE EIO
++#endif
++
+ 
+ static int crypt_as_best_we_can(TALLOC_CTX *mem_ctx,
+ 				const char *phrase,
+--- a/third_party/heimdal/kdc/kdc_locl.h
++++ b/third_party/heimdal/kdc/kdc_locl.h
+@@ -187,7 +187,7 @@
+     KDCFastState fast;
+ };
+ 
+-typedef struct kx509_req_context_desc {
++struct kx509_req_context_desc {
+     HEIM_SVC_REQUEST_DESC_COMMON_ELEMENTS;
+ 
+     struct Kx509Request req;
+@@ -200,7 +200,7 @@
+     krb5_times ticket_times;
+     unsigned int send_chain:1;          /* Client expects a full chain */
+     unsigned int have_csr:1;            /* Client sent a CSR */
+-} *kx509_req_context;
++};
+ 
+ #undef heim_pconfig
+ #undef heim_pcontext

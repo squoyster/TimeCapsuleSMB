@@ -13,7 +13,9 @@ This repo contains host-side scripts for discovery and SSH enablement. Samba dep
 ## Status
 - mDNS discovery and interactive SSH enable/disable automation are implemented.
 - Versioned packaging, minimal installation, startup, and rollback scripts are implemented.
-- Cross-build compatibility must still be validated before any PF, boot, or Time Machine integration work.
+- Samba 4.24.3 cross-builds successfully in a NetBSD 10.1 `aarch64` VM for
+  the NetBSD 6.0 `evbarm` target. Runtime validation on the Time Capsule is
+  still required before any PF, boot, or Time Machine integration work.
 
 ## Prerequisites
 - macOS host (Apple Silicon M1/M2 tested) with Python 3.10+ and `venv`.
