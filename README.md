@@ -4,6 +4,49 @@ Run a modern Samba server on an Apple Time Capsule while keeping the disk auto-m
 
 This repo contains host-side scripts for discovery and SSH enablement. Samba deployment and device configuration remain manual.
 
+## Relationship to upstream jamesyc/TimeCapsuleSMB
+
+> **Important:** This branch is a **fork of an early snapshot** (commit `582a97c`)
+> of [`jamesyc/TimeCapsuleSMB`](https://github.com/jamesyc/TimeCapsuleSMB). The
+> upstream project has since evolved into a complete, actively maintained product
+> and **independently includes its own Samba 4.24.3 cross-build** that is more
+> comprehensive than the one here. **For real-world Time Capsule use, prefer the
+> upstream.** This fork's build is retained as a parallel, independent effort.
+
+What upstream did after this snapshot:
+
+- Replaced the old layout (`setup.py`, `discovery/`, `ssh/`, `building/build.sh`)
+  with a full `src/timecapsulesmb/` Python package, a `macos/` SwiftUI app,
+  prebuilt `bin/` artifacts, and release tags up to **v2.2.7**.
+- Ships its own Samba 4.24.3 cross-build in `build/` with a **quilt-style
+  28-patch series** (`build/patches/samba4x/`), versus this fork's single
+  monolithic `building/samba-4.24.3-hostcc.patch`.
+- Targets **three** device lanes (NetBSD 4 BE/LE, NetBSD 7) versus this fork's
+  single NetBSD 6 `evbarm` (`arm--netbsdelf`) target.
+- Produces a **fully static `smbd`** (runs from a RAM disk with no shared-lib
+  dependencies) versus this fork's dynamically-linked nonshared `smbd` (which
+  needs `LD_LIBRARY_PATH` on the device).
+
+Upstream carries runtime patches that this fork does **not** — the difference
+between "compiles" and "actually serves Time Machine on a Time Capsule":
+
+- **No-pthread appliance runtime** — Time Capsule kernels do not support the
+  pthread behavior Samba 4.24 expects; upstream runs `notifyd`/`cleanupd`/
+  `scavenger` in the `smbd` parent event loop instead of forking helpers.
+- **Time Machine / HFS interop** — durable reconnect across HFS sparsebundle
+  allocation-block drift, an `AFP_AfpInfo` `fstatat` NULL-deref crash fix in
+  `vfs_fruit`, HFS unknown-owner (`4294967295`) normalization, and resume-key
+  IOCTL compound completion.
+- **`xattr_tdb` fixes** — missing rows behave like empty xattrs; oversized
+  `listxattr` returns `ERANGE` instead of a bogus length.
+- **Embedded `srvsvc`** so Finder/`smbclient` share enumeration works without
+  external DCE/RPC helpers, plus a NetBSD `getifaddrs()` fallback for kernels
+  that hang in the native path.
+
+Both projects independently arrived at the same core Waf fix (derive a fresh
+per-target compiler environment for hostcc task generators instead of reusing
+the global `bld.env`), which confirms the root cause.
+
 ## What This Does
 - Uses mDNS to discover Time Capsules on your network.
 - Enables root SSH access using AirPyrt (temporary) to allow configuration.
