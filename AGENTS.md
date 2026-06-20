@@ -14,9 +14,11 @@ Capsule's NetBSD-derived `evbarm` firmware, not macOS.
 - `ssh/`: AirPyrt, reboot, and legacy-SSH helpers.
 - `deploy.py` and `deployment/`: offline configuration/bundle generation and
   conservative device-side install, activation, and rollback scripts.
-- `building/build.sh`: a record of manual cross-compilation steps for NetBSD 6
-  `evbarm`. It contains prose and interactive instructions; do not treat it as
-  an unattended, directly executable build script.
+- `building/`: Samba cross-compile for the Time Capsule's NetBSD 6 `evbarm`
+  target. `build.sh` is a commented narrative of one historical build (read it,
+  do not run it as-is). `build-prereqs.sh` and `build-samba.sh` are the
+  executable recipes (Samba 4.24.3) driven by `samba-4.24.3-hostcc.patch` and
+  `netbsd-arm-4.24.3.txt`. See `building/AGENTS.md`.
 - `README.md`: supported workflow, device layout, and security background.
 - `todo.md`: historical design notes; prefer the implementation and README when
   they disagree with it.
@@ -101,3 +103,44 @@ installed, also exercise non-mutating CLI parsing or JSON output as relevant.
 Do not claim that cross-compiled Samba works from host-side checks alone. Record
 the exact NetBSD/Samba versions, configure flags, and target-device verification
 when changing the cross-build procedure.
+
+## Child DOX Index
+
+- `ssh/` — AirPyrt reboot and legacy-SSH helpers; owns the protocol gotchas. See `ssh/AGENTS.md`.
+- `building/` — Samba cross-compile recipe plus executable `build-prereqs.sh` / `build-samba.sh` for the NetBSD 6 `evbarm` target. See `building/AGENTS.md`.
+- `deployment/` — offline configuration/bundle generation and conservative device-side install, activation, and rollback scripts. Covered by this parent (no separate doc).
+- `discovery/` — single mDNS/Bonjour discovery module. Covered by this parent.
+- `tests/` — hardware-independent unittest suite. Covered by this parent.
+
+<!-- gitnexus:start -->
+# GitNexus — Code Intelligence
+
+This project is indexed by GitNexus as **TimeCapsuleSMB**. Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+
+> Index stale? Run `node .gitnexus/run.cjs analyze` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? `npx gitnexus analyze` (npm 11 crash → `npm i -g gitnexus`; #1939).
+
+## Always Do
+
+- **MUST run impact analysis before editing any symbol.** Before modifying a function, class, or method, run `impact({target: "symbolName", direction: "upstream"})` and report the blast radius (direct callers, affected processes, risk level) to the user.
+- **MUST run `detect_changes()` before committing** to verify your changes only affect expected symbols and execution flows.
+- **MUST warn the user** if impact analysis returns HIGH or CRITICAL risk before proceeding with edits.
+- When exploring unfamiliar code, use `query({query: "concept"})` to find execution flows instead of grepping.
+- When you need full context on a specific symbol — callers, callees, which execution flows it participates in — use `context({name: "symbolName"})`.
+
+## Never Do
+
+- NEVER edit a function, class, or method without first running `impact` on it.
+- NEVER ignore HIGH or CRITICAL risk warnings from impact analysis.
+- NEVER rename symbols with find-and-replace — use `rename` which understands the call graph.
+- NEVER commit changes without running `detect_changes()` to check affected scope.
+
+## Resources
+
+| Resource | Use for |
+|----------|---------|
+| `gitnexus://repo/TimeCapsuleSMB/context` | Codebase overview, check index freshness |
+| `gitnexus://repo/TimeCapsuleSMB/clusters` | All functional areas |
+| `gitnexus://repo/TimeCapsuleSMB/processes` | All execution flows |
+| `gitnexus://repo/TimeCapsuleSMB/process/{name}` | Step-by-step execution trace |
+
+<!-- gitnexus:end -->

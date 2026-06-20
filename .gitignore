@@ -40,3 +40,8 @@ coverage.xml
 # Editor / IDE
 .idea/
 .vscode/
+
+# Local agent / tooling config (not part of the project)
+.claude/
+CLAUDE.md
+.gitnexus/
